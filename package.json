@@ -1,6 +1,6 @@
 {
   "name": "omni-deploy",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Tiny script to deploy Omni projects.",
   "main": "index.js",
   "repository": "https://github.com/e1-bsd/omni-deploy.git",
@@ -18,5 +18,8 @@
     "shelljs": "^0.7.8",
     "stream-toolkit": "^2.1.0",
     "temp": "^0.8.3"
+  },
+  "bin": {
+    "omni-deploy": "./index.js"
   }
 }
