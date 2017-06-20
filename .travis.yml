@@ -1,0 +1,32 @@
+sudo: required
+dist: trusty
+language: node_js
+node_js:
+  - '8'
+
+cache: yarn
+
+install:
+  - npm install -g yarn
+  - yarn --prefer-offline --no-progress --frozen-lockfile
+
+deploy:
+  - provider: npm
+    email: $GIT_EMAIL
+    api_key: $NPM_TOKEN
+    skip_cleanup: true
+    on:
+      tags: true
+
+notifications:
+  email:
+    recipients:
+      - E1ODIN_Technology@EF.com
+    on_success: change
+    on_failure: always
+
+env:
+  global:
+    - GIT_NAME: Travis CI
+    - GIT_EMAIL: E1BSD_Technology@EF.com
+    - secure: K7qrfg2Hd1rBaQBQkp31xeNr3oXcIEejzW7RznIu+Z6LOvb1ZFZAT6wvh+Spo2kUXOrY7yDq4y9nB/FxchPmoBlghQ9PUYQgphRYrOXBWLpfN0LqvsvXM6OwBNp8FNQcwKuW/da5kH1q1THCDL7gxdAg3kBrL4wxXwCRb+lGJImL0dRKz12acl5DiSIjgML0npt0q/y6HIxPh1ffhjI+wLyh6tZ0kerNdCYpgP7qVdO+EW21muGt/ZgmNQGDjycd+yX+8Vn5GNUarXnqwNWERaBbQqKYQYwqte7dgAbH5JixgxztMzpxo9nZiqzdtUKMQhmyoL6P00FD1hEaRV0lGBhiSzCcMx68LXexePVi1WOEsw5X7IrfGOuuad4w20YL1CXkjEzyu5kIcrEWLphLKfW17I8y5DEXfh3xbQo/FNLWC0m0Ts5fpTvdLX2Sr7EQgftlReV6zpwkSly5Dm22rEoeFBy1OtZJxLcxzKywP33wkSDlIfWf/xbIqPazjlOYs06V06gsDPuTuQLezY9MzahgG8jskVoZVSB1noa3bKaw3tgoicZ/zHslGRHt0G5iXx2TRCsuYuUke1w2uSpwRONtJnELkx/2cFAf1U5ac3xuuv0Xr9Hvi+DtPyo+Aas+KAW0i8I9xUupdMET0+ijcLLVXQGe7UPPRm0c5Uvl9QU=
