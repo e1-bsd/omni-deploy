@@ -1,4 +1,4 @@
-#!/usr/bin/env nodea
+#!/usr/bin/env node
 
 const AWS = require('aws-sdk');
 const { queue, retryable } = require('async');
