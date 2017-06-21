@@ -182,9 +182,10 @@ function uploadWorker(task, callback) {
   });
 }
 
+// progress: returns progression through both queues as a percentage
 function progress() {
   const waiting =
       copyQueue.length() + uploadQueue.length() + copyQueue.running() + uploadQueue.running();
-  const perc = `${Math.round(100 - ((waiting / filesCount) * 100))}%`;
-  return `${perc}${new Array(5 - perc.length).fill('').join(' ')}`;
+  const perc = Math.round(100 - ((waiting / filesCount) * 100));
+  return `${perc.toString()}%`;
 }
