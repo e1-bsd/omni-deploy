@@ -12,7 +12,6 @@ const zopfli = require('node-zopfli');
 const temp = require('temp').track();
 const getUsage = require('command-line-usage');
 const { countingStream } = require('stream-toolkit');
-const execOrExit = require('./exec-or-exit');
 const writeConfig = require('./write-config');
 
 const optionList = [{
