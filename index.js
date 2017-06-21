@@ -12,7 +12,8 @@ const zopfli = require('node-zopfli');
 const temp = require('temp').track();
 const getUsage = require('command-line-usage');
 const { countingStream } = require('stream-toolkit');
-const execOrExit = require('./execOrExit');
+const execOrExit = require('./exec-or-exit');
+const writeConfig = require('./write-config');
 
 const optionList = [{
   name: 'env',
@@ -64,7 +65,7 @@ if (config.accessKeyId) {
 
 const s3 = new AWS.S3();
 
-execOrExit(`yarn run omni-set-up-config -- --config ${options.env}`);
+writeConfig(options.env);
 
 options.dry && console.log('DRY RUN! No upload will actually happen.\n');
 isProductionEnv &&
