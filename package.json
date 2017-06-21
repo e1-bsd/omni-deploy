@@ -1,8 +1,7 @@
 {
   "name": "omni-deploy",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Tiny script to deploy Omni projects.",
-  "private": true,
   "bin": {
     "omni-deploy": "./index.js"
   },
