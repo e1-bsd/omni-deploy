@@ -1,11 +1,23 @@
 {
   "name": "omni-deploy",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Tiny script to deploy Omni projects.",
+  "private": true,
+  "bin": {
+    "omni-deploy": "./index.js"
+  },
   "main": "index.js",
-  "repository": "https://github.com/e1-bsd/omni-deploy.git",
-  "author": "Rubén Illodo Brea <me@rubenillodo.com>",
-  "license": "MIT",
+  "engines": {
+    "node": ">=6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/e1-bsd/omni-showcase.git"
+  },
+  "bugs": {
+    "url": "https://github.com/e1-bsd/omni-showcase/issues"
+  },
+  "homepage": "https://github.com/e1-bsd/omni-showcase#readme",
   "dependencies": {
     "async": "^2.4.1",
     "aws-sdk": "^2.73.0",
@@ -18,9 +30,6 @@
     "shelljs": "^0.7.8",
     "stream-toolkit": "^2.1.0",
     "temp": "^0.8.3"
-  },
-  "bin": {
-    "omni-deploy": "./index.js"
   },
   "devDependencies": {
     "eslint": "^4.0.0"
