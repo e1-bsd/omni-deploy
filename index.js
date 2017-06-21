@@ -92,12 +92,12 @@ uploadQueue.drain = () => {
   uploadQueue.drain = () => {
     const original = originalSizeAll / 1000000;  // B to MB
     const compressed = compressedSizeAll / 1000000;
-    const savedPerc = 100 - Math.round((compressedSizeAll / originalSizeAll) * 100);
     console.log(
         '\nAll done.' +
-        ` Crunched ${original.toFixed(2)}MB down to ${compressed.toFixed(2)}MB` +
-        `, saving ${savedPerc}%.`);
+        ` Source: ${original.toFixed(2)}MB,` +
+        ` Uploaded: ${compressed.toFixed(2)}MB.`);
     uploadQueue.drain = () => {};
+    process.exit(0);
   };
 };
 
@@ -120,7 +120,7 @@ waterfall([
       console.info('Pre-upload bucket object count:', objects.KeyCount);
       console.info('Existing objects listing:');
       objects.Contents.map(i => i.Key).forEach((filename) =>
-        console.info(`    ${filename}`));
+        console.info(`  ${filename}`));
     }
     callback(null, files);
   },
@@ -188,7 +188,6 @@ function uploadWorker(task, callback) {
     const ratio = (size / originalSize).toFixed(2);
     let details = `(${mimeType})`;
     details += encoding ? ` (${encoding}, ratio ${ratio})` : '';
-    compressedSizeAll += size;
     if (options.dry) {
       console.info(progress(), 'Would upload:', file, details);
       callback();
@@ -209,6 +208,7 @@ function uploadWorker(task, callback) {
           console.info(progress(), 'Errored, retrying:', file);
         } else {
           console.info(progress(), 'Uploaded:', file, details);
+          compressedSizeAll += size;
         }
         callback(_err);
       });
