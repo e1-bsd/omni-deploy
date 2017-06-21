@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const AWS = require('aws-sdk');
-const { queue, retryable } = require('async');
+const { queue, waterfall, map, retryable } = require('async');
 const invariant = require('invariant');
 const path = require('path');
 const fs = require('fs');
@@ -55,15 +55,17 @@ if (config.region) {
 }
 
 if (config.accessKeyId) {
-  console.log('Will use custom accessKey.');
+  console.log('Will use custom accessKey.\n');
   AWS.config.update({
     accessKeyId: config.accessKeyId,
     secretAccessKey: config.secretAccessKey,
   });
 }
 
+const s3 = new AWS.S3();
+
 execOrExit(`yarn run omni-set-up-config -- --config ${options.env}`);
-console.log(`Upload to S3 (${options.env}) is starting...\n`);
+
 options.dry && console.log('DRY RUN! No upload will actually happen.\n');
 isProductionEnv &&
     console.log(`This production build will use ${compressionAlgo}, which is slower to compress!\n`);
@@ -81,6 +83,7 @@ let filesCount;
 let originalSizeAll = 0;
 let compressedSizeAll = 0;
 
+// post-upload flow: runs after uploads have finished
 uploadQueue.drain = () => {
   if (copyQueue.length() || uploadQueue.length() ||
       copyQueue.running() || uploadQueue.running()) return;  // tasks remain!
@@ -97,23 +100,52 @@ uploadQueue.drain = () => {
   };
 };
 
-fs.readdir(absoluteFolder, (err, files) => {
-  const index = files.splice(files.indexOf('index.html'), 1);
-  invariant(index[0] === 'index.html', 'index.html should be present');
-  filesCount = files.length + 1;
-  files.forEach((file) => {
-    copyQueue.push({
-      file,
-      folder: absoluteFolder,
-    }, (_err) => {
-      if (_err) {
-        console.error(colors.red('Error!'), file, _err);
-        process.exit(1);
-      } else console.info(progress(), 'Crunched:', file);
+// main flow: lists S3 objects, lists files, populates copyQueue
+waterfall([
+  ! options.dry ? (callback) => {
+    s3.listObjectsV2({
+      Bucket: config.bucket,
+    }, callback);
+  } : null,
+  (objects, callback) => {
+    callback = callback || objects;  // if listObjectsV2 didn't happen in the prior step
+    objects = typeof objects === 'function' ? null : objects;
+    fs.readdir(absoluteFolder, (err, files) => {
+      callback(err, objects, files);
     });
-  });
+  },
+  (objects, files, callback) => {
+    if (objects) {
+      console.info('Pre-upload bucket object count:', objects.KeyCount);
+      console.info('Existing objects listing:');
+      objects.Contents.map(i => i.Key).forEach((filename) =>
+        console.info(`    ${filename}`));
+    }
+    callback(null, files);
+  },
+  (files, callback) => {
+    console.log(`\nUpload to S3 (${options.env}) is starting...\n`);
+    const index = files.splice(files.indexOf('index.html'), 1);
+    invariant(index[0] === 'index.html', 'index.html should be present');
+    filesCount = files.length + 1;
+    map(files, (file, _callback) => {
+      copyQueue.push({
+        file,
+        folder: absoluteFolder,
+      }, (err) => {
+        if (! err) console.info(progress(), 'Crunched:', file);
+        _callback(err);
+      });
+    }, callback);
+  }
+].filter(i => i), (err) => {
+  if (err) {
+    console.error(colors.red('Error!'), err);
+    process.exit(1);
+  }
 });
 
+// copyWorker: streams files to a temporary location while compressing
 function copyWorker(task, callback) {
   const { folder, file } = task;
   const filePath = path.join(folder, file);
@@ -147,6 +179,7 @@ function copyWorker(task, callback) {
   });
 }
 
+// uploadWorker: uploads each file to S3
 function uploadWorker(task, callback) {
   const { file, mimeType, encoding, originalSize } = task;
   fs.stat(task.path, (err, { size }) => {
@@ -159,7 +192,7 @@ function uploadWorker(task, callback) {
       console.info(progress(), 'Would upload:', file, details);
       callback();
     } else {
-      new AWS.S3().putObject({
+      s3.putObject({
         Bucket: config.bucket,
         CacheControl: file.endsWith('index.html') ?
             CACHE_CONTROL_INDEX :
