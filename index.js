@@ -15,15 +15,20 @@ const { countingStream } = require('stream-toolkit');
 const writeConfig = require('./write-config');
 
 const optionList = [{
+  name: 'dry',
+  alias: 'd',
+  type: Boolean,
+  description: 'Dry run - skip the upload',
+}, {
   name: 'env',
   alias: 'e',
   type: String,
   description: 'Specifies environment to deploy to, e.g. qa',
 }, {
-  name: 'dry',
-  alias: 'd',
+  name: 'zopfli',
+  alias: 'z',
   type: Boolean,
-  description: 'Dry run - skip the upload',
+  description: 'Use zopfli instead of gzip to compress',
 }];
 
 const options = require('command-line-args')(optionList);
@@ -47,8 +52,6 @@ const CACHE_CONTROL_INDEX = 'no-cache';  // keep history buffer. http://stackove
 const CACHE_CONTROL_OTHERS = 'public, max-age=31536000';  // 1 year
 
 const config = require(path.resolve(`ci/${options.env}.json`)); // eslint-disable-line import/no-dynamic-require
-const isProductionEnv = options.env.startsWith('staging') || options.env.startsWith('production');
-const compressionAlgo = isProductionEnv ? 'zopfli' : 'zlib';
 
 if (config.region) {
   AWS.config.update({ region: config.region });
@@ -67,8 +70,8 @@ const s3 = new AWS.S3();
 writeConfig(options.env);
 
 options.dry && console.log('DRY RUN! No upload will actually happen.\n');
-isProductionEnv &&
-    console.log(`This production build will use ${compressionAlgo}, which is slower to compress!\n`);
+options.zopfli &&
+    console.log(`This production build will use zopfli, which is slower to compress!\n`);
 
 const copyQueue = queue(copyWorker, QUEUE_CONCURRENCY);
 const uploadQueue = queue(retryable(UPLOAD_RETRIES, uploadWorker), QUEUE_CONCURRENCY);
@@ -151,7 +154,7 @@ function copyWorker(task, callback) {
   const filePath = path.join(folder, file);
   const mimeType = mime.lookup(file);
   const isZippable = ! NOZIP_MIME_TEST.test(mimeType);
-  const { createGzip } = isProductionEnv ? zopfli : zlib;
+  const { createGzip } = options.zopfli ? zopfli : zlib;
   const counter = countingStream();
   const inStream = fs.createReadStream(filePath).pipe(counter);
   temp.open('omniupload', (err, tempFile) => {
