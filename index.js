@@ -28,7 +28,7 @@ const optionList = [{
   name: 'zopfli',
   alias: 'z',
   type: Boolean,
-  description: 'Use zopfli instead of gzip to compress',
+  description: 'Use zopfli instead of zlib to compress',
 }];
 
 const options = require('command-line-args')(optionList);
